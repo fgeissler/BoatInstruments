@@ -38,8 +38,6 @@ void initDataStore() {
   wifiSSID = preferences.getString("ssid", "AmalBoatInstrument");
   wifiPassword = preferences.getString("password", "AmalBoatInstrument");
   preferences.end();
-//  wifiSSID = "Heldin";
-//  wifiPassword = "Quester+Kirsten+Februar+2025";
   // WiFi
 
   // Serial
