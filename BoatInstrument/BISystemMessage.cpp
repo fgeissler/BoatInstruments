@@ -36,7 +36,7 @@ void biEnqueueSystemMessage(const system_message_level_t level, const char* form
   vsnprintf(systemMessageEvent.message, sizeof(systemMessageEvent.message), format, args);
 
   // Nachricht in die Queue schicken (nicht blockierend)
-  xQueueSend(systemMessageQueue, &systemMessageEvent, 0); 
+  xQueueSendToBack(systemMessageQueue, &systemMessageEvent, 0); 
 }
 
 
@@ -53,14 +53,6 @@ char* asStr(system_message_level_t level) {
   }
 }
 
-// Nachrichten an alle verteilen
-void biDispatchMessage(const system_message_level_t level, const char *message) {
-  // Moderne Range-based for loop
-  for (auto systemMessageConsumer : systemMessageConsumers) {
-      systemMessageConsumer(level, message);
-  }
-}
-
 void systemMessagePublisherTask(void *pvParameters) {
   system_message_event_t systemMessageEvent;
 
@@ -68,7 +60,9 @@ void systemMessagePublisherTask(void *pvParameters) {
     // Task schläft hier, bis ein Element in der Queue landet
     if (xQueueReceive(systemMessageQueue, &systemMessageEvent, portMAX_DELAY)) {
       // Hier rufen wir die Consumer-Liste auf
-      biDispatchMessage(systemMessageEvent.level, systemMessageEvent.message);
+      for (auto systemMessageConsumer : systemMessageConsumers) {
+        systemMessageConsumer(systemMessageEvent.level, systemMessageEvent.message);
+      }
     }
   }
 }

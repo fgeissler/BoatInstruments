@@ -27,11 +27,11 @@ int16_t x[5], y[5];
 uint8_t gt911_i2c_addr = 0;
 
 void usbSerialLogger(const system_message_level_t level, const char *buffer) {
-  if (!level == OFF) {
+/*  if (!level == OFF) {
     USBSerial.print(asStr(level)); 
   }
-  USBSerial.print(buffer);
-  USBSerial.flush();
+*/  USBSerial.print(buffer);
+//  USBSerial.flush();
 }
 
 void initUSBSerial(unsigned long baudrate, unsigned long timeout_ms) {
@@ -42,7 +42,7 @@ void initUSBSerial(unsigned long baudrate, unsigned long timeout_ms) {
     
   // Warte auf Verbindung, aber maximal bis zum Timeout
   while (!USBSerial && (millis() - start_time < timeout_ms)) {
-    vTaskDelay(pdMS_TO_TICKS(10));
+    delay(10);
   }
 
   if (USBSerial) {

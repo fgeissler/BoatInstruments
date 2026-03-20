@@ -62,7 +62,7 @@ void initGFX() {
 void lv_tick_task(void *arg) {
     while(1) {
         vTaskDelay(pdMS_TO_TICKS(10)); // 10ms warten
-        lv_tick_inc(10);                // LVGL sagen, dass 10ms vergangen sind
+        lv_tick_inc(10);               // LVGL sagen, dass 10ms vergangen sind
     }
 }
 
