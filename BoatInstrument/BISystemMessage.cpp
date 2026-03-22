@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <vector>
+#include <shared_mutex>
+#include <mutex>
 
 #include "BISystemMessage.h"
 
@@ -16,15 +18,28 @@ static QueueHandle_t systemMessageQueue = NULL;
 
 // Die "Liste" als C++ Vector
 static std::vector<bi_system_message_consumer_t> systemMessageConsumers;
+static std::shared_mutex mtx;
 
 bool biRegisterSystemMessageConsumer(bi_system_message_consumer_t systemMessageConsumer) {
   if (systemMessageConsumer == NULL) {
     return false;
   }
 
+  std::unique_lock lock(mtx);
   systemMessageConsumers.push_back(systemMessageConsumer);
-
   return 0; // Erfolg
+}
+
+bool biDeregisterSystemMessageConsumer(bi_system_message_consumer_t systemMessageConsumer) {
+
+  std::unique_lock lock(mtx);
+  auto it = std::find(systemMessageConsumers.begin(), systemMessageConsumers.end(), systemMessageConsumer);
+
+  if (it == systemMessageConsumers.end()) {
+    return false;
+  }
+  systemMessageConsumers.erase(it); // Löscht das Element an der gefundenen Position
+  return true;
 }
 
 void biEnqueueSystemMessage(const system_message_level_t level, const char* format, ...) {
@@ -38,7 +53,6 @@ void biEnqueueSystemMessage(const system_message_level_t level, const char* form
   // Nachricht in die Queue schicken (nicht blockierend)
   xQueueSendToBack(systemMessageQueue, &systemMessageEvent, 0); 
 }
-
 
 char* asStr(system_message_level_t level) {
   switch (level) {
@@ -60,6 +74,7 @@ void systemMessagePublisherTask(void *pvParameters) {
     // Task schläft hier, bis ein Element in der Queue landet
     if (xQueueReceive(systemMessageQueue, &systemMessageEvent, portMAX_DELAY)) {
       // Hier rufen wir die Consumer-Liste auf
+      std::shared_lock lock(mtx);
       for (auto systemMessageConsumer : systemMessageConsumers) {
         systemMessageConsumer(systemMessageEvent.level, systemMessageEvent.message);
       }
@@ -67,7 +82,8 @@ void systemMessagePublisherTask(void *pvParameters) {
   }
 }
 
-void biInitSystemMessage() {
+void initSystemMessage() {
+  systemMessageConsumers.reserve(2);
   systemMessageQueue = xQueueCreate(10, sizeof(system_message_event_t));
 
   if (systemMessageQueue != NULL) {

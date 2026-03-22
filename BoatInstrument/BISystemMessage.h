@@ -16,8 +16,9 @@ typedef enum {
  */
 typedef void (*bi_system_message_consumer_t)(const system_message_level_t level, const char *buffer);
 
-void biInitSystemMessage();
+void initSystemMessage();
 bool biRegisterSystemMessageConsumer(bi_system_message_consumer_t systemMessageConsumer);
+bool biDeregisterSystemMessageConsumer(bi_system_message_consumer_t systemMessageConsumer);
 void biEnqueueSystemMessage(const system_message_level_t level, const char* format, ...);
 
 char* asStr(system_message_level_t level);

@@ -22,7 +22,8 @@ void timeavailable(struct timeval *t) {
 
   localtime_r(&t->tv_sec, &tm); // update the structure tm with the current time
   biEnqueueSystemMessage(INFO, "Got time adjustment from NTP! %d.%m.%Y %H:%M:%S.\n", &tm);
-  rtc.setDateTime(tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+//  rtc.setDateTime(tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 }
 
 void initClock() {
@@ -32,7 +33,7 @@ void initClock() {
   biEnqueueSystemMessage(OFF, "\n");
   biEnqueueSystemMessage(INFO, "Initializing Clock...\n");
  
-  if (!rtc.begin(Wire, PCF85063_SLAVE_ADDRESS, 15, 7)) {
+/*  if (!rtc.begin(Wire, PCF85063_SLAVE_ADDRESS, 15, 7)) {
     biEnqueueSystemMessage(INFO, "Failed to find PCF8563 - check your wiring!\n");
   } else {
     RTC_DateTime rtcDateTime = rtc.getDateTime();
@@ -50,15 +51,10 @@ void initClock() {
 
     sntp_set_time_sync_notification_cb( timeavailable ); // set notification call-back function
   }
-
+*/
   sntp_set_sync_interval(12 * 60 * 60 * 1000UL); // 12 hours
-  configTime(0, 0, MY_NTP_SERVER);  // 0, 0 because we will use TZ in the next line
-  setenv("TZ", MY_TZ, 1);           // Set environment variable with your time zone
+
+  configTime(0, 0, MY_NTP_SERVER);               // 0, 0 because we will use TZ in the next line
+  setenv("TZ", MY_TZ, 1);                        // Set environment variable with your time zone
   tzset();
-
-  time(&now);             // read the current time
-  localtime_r(&now, &tm); // update the structure tm with the current time
-  biEnqueueSystemMessage(INFO, "Time is: %d.%m.%Y %H:%M:%S.\n", &tm);
-
-  biEnqueueSystemMessage(INFO, "Initializing Clock finished.\n");
 }

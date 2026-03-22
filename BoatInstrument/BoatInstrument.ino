@@ -4,7 +4,6 @@
 #include <SPI.h>
 #include <HWCDC.h>
 
-#include <Arduino_GFX_Library.h>
 #include <lvgl.h>
 
 #include "BISystemMessage.h"
@@ -15,10 +14,11 @@
 #include "BIDisplay.h"
 #include "BIWiFi.h"
 #include "BIWebServer.h"
-//#include "BITimeKeeping.h"
+#include "BITimeKeeping.h"
 #include "BISignalK.h"
 
-extern Arduino_RGB_Display *gfx;
+#define ARDUHAL_LOG_LEVEL ARDUHAL_LOG_LEVEL_VERBOSE
+
 HWCDC USBSerial;
 
 
@@ -52,46 +52,60 @@ void initUSBSerial(unsigned long baudrate, unsigned long timeout_ms) {
 
 
 void setup() {
-  // 1. Initialisation
+  // 1. Initialization of the IOExpander
+  // This is a two step initialization because there are some initialization task to be done
+  // really quick after startup.
+  // - set initial values of ports
+  // - initialize IO direction of ports
+  // - silencing the buzzer
   initIOExpander();
 
   // 2. Initialize touch (BEFORE display)
   initTouch();
   
   // 3. Set backlight
-  setBackLightPercent(70); // ~70% brightness
+  setBackLightPercent(30); // ~50% brightness
 
-  // 4. 5. Final initialization tasks
+  // 4. Final IOExpander initialization tasks
+  // This is the second stage of initialization
+  // - set values of ports
+  // - set final IO direction of ports
   initIOExpanderFinalPath();
 
-  biInitSystemMessage();
+  // 5. Initialize System Message Queue
+  initSystemMessage();
 
-  // A short Beep, the IOExpander is up and running and well configured.
-  // Power is locked, key 1 may be released
-  beep(100);
+  // A short Beep, the IOExpander is up and running and well configured,
+  // power is locked, key 1 may be released
+//  beep(100);
  
-  initUSBSerial(115200, 5000);
+  initUSBSerial(115200, 500);
 
   biEnqueueSystemMessage(OFF, "\n");
   biEnqueueSystemMessage(INFO, "---- Amal BoatInstrument is starting ---\n");
 
-  // 6. Load stored configuration data
+  // 6. Load stored configuration data from LVRam
   initDataStore();
 
-  // 7. Initialize Display
+  // 7. Initialize Display Driver
   initDisplay();
 
   // 8. Initialize WiFi
+  // According to stored configuration setup as AccessPoint or connecting to one
   initWiFi();
 
   // 9. Initialize Clock
-//  initClock();
+  initClock();
 
   // 10. Initialize HTTP Server
   initHTTPServer();
 
   // 11. Initialize SignalK
   initSignalK();
+
+  // Now, that everything is configured and LV is up and running, remove GFX from SystemMessageConsumerList.
+  // SystemMessages will now be listed in LoggingScreen
+  biRemoveGFXSystemMessageLogger();
 }
 
 unsigned long startZeit = 0;
@@ -110,10 +124,12 @@ void loop() {
     uint16_t batVoltage = 0;
     uint8_t chargerStatus = 0;
 
-    if (getBatteryVoltage(&batVoltage) && getChargerStatus(&chargerStatus)) {
+/*    if (getBatteryVoltage(&batVoltage) && getChargerStatus(&chargerStatus)) {
       biEnqueueSystemMessage(INFO, "Battery %dV %s.\n", batVoltage, chargerStatus == 0 ? "Charging" : "Idle");
     } else {
       biEnqueueSystemMessage(WARN, "Getting Battery Voltage failed.\n");
     }
+*/
   }
+
 }
