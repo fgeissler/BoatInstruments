@@ -21,11 +21,6 @@
 
 HWCDC USBSerial;
 
-
-//TouchDrvGT911 GT911;
-int16_t x[5], y[5];
-uint8_t gt911_i2c_addr = 0;
-
 void usbSerialLogger(const system_message_level_t level, const char *buffer) {
 /*  if (!level == OFF) {
     USBSerial.print(asStr(level)); 
